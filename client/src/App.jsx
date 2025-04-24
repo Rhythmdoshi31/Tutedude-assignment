@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Nav from './Components/nav';
 import VerticalProgressBar from './Components/progressBar';
+import { saveProgress } from './api/saveProgress';
 
 function App() {
   const videoRef = useRef(null);
@@ -8,15 +9,25 @@ function App() {
 
   useEffect(() => {  
     let interval;
-    // Here, Tracking every second watched and storing it into The Set...
+    // Method to set watchedSeconds...
     const startTracking = () => {
       interval = setInterval(() => {
         const current = Math.floor(videoRef.current.currentTime);
-        setWatchedSeconds(prevSet => new Set(prevSet).add(current));
+        setWatchedSeconds(prev => new Set(prev).add(current));
       }, 1000); 
     };
-
-    const stopTracking = () => clearInterval(interval);
+    // Method to clear interval, and get intervals and save progress...
+    const stopTracking = () => {
+      clearInterval(interval);
+      const lastWatched = Math.floor(videoRef.current.currentTime);
+      const intervals = convertToIntervals();
+      const data = {
+        userId: 'user1', // This can be done to be dynamic later...
+        lastWatchedTime: lastWatched,
+        watchedIntervals: intervals,
+      };
+      saveProgress(data); //Sending this data to backend via /api/progress...
+    };
 
     const video = videoRef.current;
     video.addEventListener('play', startTracking);
@@ -28,10 +39,9 @@ function App() {
       video.removeEventListener('pause', stopTracking);
       video.removeEventListener('ended', stopTracking);
     };
-  }, []);
+  }, [watchedSeconds]);
 
-  // Converting the stored seconds in the set to intervals...
-  // Sorted them and compared with previous...
+  // Converting seconds in Set to Intervals...
   const convertToIntervals = () => {
     const sorted = [...watchedSeconds].sort((a, b) => a - b);
     const intervals = [];
@@ -42,15 +52,11 @@ function App() {
         start = sorted[i];
       }
     }
-    // Security check for start being undefined...
-    if (start !== undefined) intervals.push([start, sorted[sorted.length - 1] + 1]);
+    if (start !== undefined) intervals.push([start, sorted[sorted.length - 1]]);
     return intervals;
   };
 
-  const watchedIntervals = convertToIntervals();  
-  console.log(watchedIntervals);  // TESTING...
-
-  // Get percentage for progress bar...
+  // Getting Percentage of Progress...
   const totalDuration = videoRef.current?.duration || 1;
   const totalWatched = [...watchedSeconds].length;
   const progress = Math.round((totalWatched / totalDuration) * 100);
@@ -60,7 +66,7 @@ function App() {
       <Nav/>
       <div className='block md:flex items-top mt-12 h-[80vh]'>
         <div className='w-[90%] md:w-[60%] h-[50%] md:h-[80%] mx-4'>
-          <video ref={videoRef} src="src/assets/video.mp4" className='w-full h-full object-cover' autoPlay muted controls ></video>
+          <video ref={videoRef} src="src/assets/video.mp4" className='w-full h-full object-cover' autoPlay muted controls></video>
         </div>
         <div className='mt-5 md:mt-0 h-[45%] md:h-[75%]'>
           <VerticalProgressBar progress={progress} />
