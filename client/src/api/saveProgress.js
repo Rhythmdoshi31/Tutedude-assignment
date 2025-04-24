@@ -1,15 +1,22 @@
-export const saveProgress = async (data) => {
-    try {
-      const response = await fetch('/api/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data),
-      });
-      return await response.json();
-    } catch (err) {
-      console.error('Failed to save progress:', err);
+// Saving progress to DB once video is paused / ended...
+
+export const saveProgress = async (progress) => {
+  try {
+    const response = await fetch('http://localhost:3000/api/progress', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(progress),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save progress');
     }
-  };
-  
+
+    const data = await response.json();
+    console.log('Progress saved:', data);
+  } catch (error) {
+    console.error("Error saving progress:", error);
+  }
+};

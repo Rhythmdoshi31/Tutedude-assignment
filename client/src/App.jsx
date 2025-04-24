@@ -1,35 +1,55 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Nav from './Components/nav';
 import VerticalProgressBar from './Components/progressBar';
+import WatchedOverlay from './Components/WatchedOverlay';
 import { saveProgress } from './api/saveProgress';
+import { loadProgress } from './utils/loadProgress';
+import { convertToIntervals } from './utils/convertToIntervals';
 
 function App() {
   const videoRef = useRef(null);
-  const [watchedSeconds, setWatchedSeconds] = useState(new Set());  
+  const [watchedSeconds, setWatchedSeconds] = useState(new Set());
+  const [duration, setDuration] = useState(null);
+  const [lastWatchedTime, setLastWatchedTime] = useState(0);
+  const [watchedIntervals, setWatchedIntervals] = useState([]);
 
-  useEffect(() => {  
+  // Loading progress o
+  useEffect(() => {
+    loadProgress(setWatchedSeconds, setWatchedIntervals, setLastWatchedTime);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const onMetadataLoaded = () => {  // Did this because Duration was being set even before Metadata wal loaded, resulting in bugs...
+      setDuration(video.duration);
+      if (lastWatchedTime && lastWatchedTime < video.duration) {
+        video.currentTime = lastWatchedTime;
+      }
+    };
+    video.addEventListener('loadedmetadata', onMetadataLoaded);
+    return () => video.removeEventListener('loadedmetadata', onMetadataLoaded);
+  }, [lastWatchedTime]);
+
+  // Hook for working the StartTracking and StopTracking functions...
+  useEffect(() => {
     let interval;
-    // Method to set watchedSeconds...
+    const video = videoRef.current;
+
     const startTracking = () => {
       interval = setInterval(() => {
         const current = Math.floor(videoRef.current.currentTime);
         setWatchedSeconds(prev => new Set(prev).add(current));
-      }, 1000); 
+      }, 1000);
     };
-    // Method to clear interval, and get intervals and save progress...
+    // Saving progress on StopTracking...
     const stopTracking = () => {
       clearInterval(interval);
       const lastWatched = Math.floor(videoRef.current.currentTime);
-      const intervals = convertToIntervals();
-      const data = {
-        userId: 'user1', // This can be done to be dynamic later...
-        lastWatchedTime: lastWatched,
-        watchedIntervals: intervals,
-      };
-      saveProgress(data); //Sending this data to backend via /api/progress...
+      const intervals = convertToIntervals(watchedSeconds);
+      setWatchedIntervals(intervals);
+      saveProgress({ userId: 'user1', lastWatchedTime: lastWatched, watchedIntervals: intervals });
     };
 
-    const video = videoRef.current;
     video.addEventListener('play', startTracking);
     video.addEventListener('pause', stopTracking);
     video.addEventListener('ended', stopTracking);
@@ -41,34 +61,23 @@ function App() {
     };
   }, [watchedSeconds]);
 
-  // Converting seconds in Set to Intervals...
-  const convertToIntervals = () => {
-    const sorted = [...watchedSeconds].sort((a, b) => a - b);
-    const intervals = [];
-    let start = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
-        intervals.push([start, sorted[i - 1]]);
-        start = sorted[i];
-      }
-    }
-    if (start !== undefined) intervals.push([start, sorted[sorted.length - 1]]);
-    return intervals;
-  };
-
-  // Getting Percentage of Progress...
-  const totalDuration = videoRef.current?.duration || 1;
-  const totalWatched = [...watchedSeconds].length;
-  const progress = Math.round((totalWatched / totalDuration) * 100);
+  // Calculating the percentage of progress made...
+  const totalWatched = watchedSeconds.size;
+  const progress = duration ? Math.min(Math.round((totalWatched / duration) * 100), 100) : 0;
 
   return (
     <div className='bg-black h-screen w-full text-white px-8'>
-      <Nav/>
-      <div className='block md:flex items-top mt-12 h-[80vh]'>
-        <div className='w-[90%] md:w-[60%] h-[50%] md:h-[80%] mx-4'>
-          <video ref={videoRef} src="src/assets/video.mp4" className='w-full h-full object-cover' autoPlay muted controls></video>
+      <Nav />
+      <div className='flex flex-col md:flex-row items-top mt-12'>
+        <div className='flex flex-col items-center md:w-[60%] mx-auto'>
+          <div className='w-[90%] md:w-full h-[50%] md:h-[100%] mx-4'>
+            <video ref={videoRef} src="src/assets/video.mp4" className='w-full h-full object-cover' muted controls />
+          </div>
+          <div className='relative w-full bg-gray-200 h-2 mt-4'>
+            <WatchedOverlay intervals={watchedIntervals} duration={duration} />
+          </div>
         </div>
-        <div className='mt-5 md:mt-0 h-[45%] md:h-[75%]'>
+        <div className='mt-5 md:mt-0 md:w-[35%] mx-auto'>
           <VerticalProgressBar progress={progress} />
         </div>
       </div>

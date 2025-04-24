@@ -5,7 +5,7 @@ const VerticalProgressBar = ({ progress }) => {
 
   return (
     <div className='h-full flex flex-col items-center justify-center'> 
-        <div className="w-full w-8 h-full bg-gray-200 rounded-lg relative">
+        <div className="w-full w-[10%] h-full bg-gray-200 rounded-lg relative">
             <div
             className="bg-blue-500 rounded-lg absolute bottom-0 w-full"
             style={{ height: progressHeight }}
