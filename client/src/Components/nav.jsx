@@ -4,7 +4,7 @@ const handleClearProgress = async () => {
   try {
     const userId = "user1"; // or however you're storing the current user
 
-      const response = await fetch(`http://localhost:3000/api/progress/${userId}`, {
+      const response = await fetch(`https://videoprogresslogger.onrender.com/api/progress/${userId}`, {
           method: 'DELETE'
       });
 

@@ -2,7 +2,7 @@
 
 export const saveProgress = async (progress) => {
   try {
-    const response = await fetch('http://localhost:3000/api/progress', {
+    const response = await fetch('https://videoprogresslogger.onrender.com/api/progress', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

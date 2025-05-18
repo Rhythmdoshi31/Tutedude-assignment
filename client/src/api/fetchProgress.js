@@ -2,7 +2,7 @@
 
 export const fetchProgress = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/progress/${userId}`);
+      const response = await fetch(`https://videoprogresslogger.onrender.com/api/progress/${userId}`);
       if (response.ok) {
         const data = await response.json();
         console.log(data);

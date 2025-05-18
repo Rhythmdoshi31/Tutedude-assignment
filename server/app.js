@@ -22,5 +22,5 @@ app.use("/api/progress", progressRouter);
 
 // Start the server
 app.listen(port, () => {
-    console.log(`Backend server running at http://localhost:${port}`);
+    console.log(`Backend server running at https://videoprogresslogger.onrender.com`);
 });
