@@ -1,4 +1,4 @@
-# Progress Tracking Application
+# Video Progress Tracking Application
 
 This application allows users to track their progress while watching content. The backend API allows users to store their progress data, which consists of `userId`, `lastWatchedTime`, and `watchedIntervals`.
 
@@ -46,7 +46,7 @@ This application allows users to track their progress while watching content. Th
 
 1. Navigate to the Frontend Directory:
     ```bash
-    cd tutedude-assignment/frontend
+    cd VideoProgressLogger/frontend
 
 2. Install Dependencies:
     ```bash
